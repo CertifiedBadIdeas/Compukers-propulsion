@@ -35,16 +35,11 @@ import net.minecraft.gametest.framework.GameTestInfo
 import net.minecraft.gametest.framework.GameTestListener
 import net.minecraft.gametest.framework.GameTestRunner
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.InteractionHand
-import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.state.properties.BlockStateProperties
-import net.neoforged.neoforge.common.util.FakePlayerFactory
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate
 import ru.lazyhat.compukters.impl.registry.CompuktersRegistry
-import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorContext
 import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorSaveResult
-import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorServer
 import net.minecraft.util.Unit as MinecraftUnit
 
 /** Tick-resolution timing probe. Physics is paused; nozzle block-entity ticks and VM execution remain live. */
@@ -121,17 +116,8 @@ object CreativeVectorThrusterLatencyGameTests {
                     if (entity.throttle == 0.4f && sample.throttleAppliedTick == null) sample.throttleAppliedTick = tick
                 }
             }
-            val player = FakePlayerFactory.getMinecraft(helper.level)
-            val absolute = currentPosition.below()
-            player.setPos(absolute.x + 0.5, absolute.y + 0.5, absolute.z + 0.5)
-            player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack(CompuktersRegistry.PERIPHERAL_CONFIGURATOR_ITEM.get()))
-            val result =
-                PeripheralConfiguratorServer.save(
-                    player,
-                    InteractionHand.MAIN_HAND,
-                    PeripheralConfiguratorContext(absolute, Direction.WEST),
-                    "engine",
-                )
+            PeripheralNetworkGameTestFixtures.bind(helper, currentPosition, enginePosition)
+            val result = PeripheralNetworkGameTestFixtures.name(helper, enginePosition, "engine")
             helper.assertTrue(result == PeripheralConfiguratorSaveResult.NAMED_DEVICE, "Could not name latency probe engine")
         }
         val source =

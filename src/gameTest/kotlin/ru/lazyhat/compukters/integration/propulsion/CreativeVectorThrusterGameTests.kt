@@ -34,18 +34,12 @@ import net.minecraft.gametest.framework.GameTestInfo
 import net.minecraft.gametest.framework.GameTestListener
 import net.minecraft.gametest.framework.GameTestRunner
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.InteractionHand
-import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.state.properties.AttachFace
 import net.minecraft.world.level.block.state.properties.BlockStateProperties
-import net.neoforged.neoforge.common.util.FakePlayerFactory
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate
 import ru.lazyhat.compukters.impl.registry.CompuktersRegistry
-import ru.lazyhat.compukters.minecraft.peripheral.PeripheralCableBlock
-import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorContext
 import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorSaveResult
-import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorServer
 import net.minecraft.util.Unit as MinecraftUnit
 
 @PrefixGameTestTemplate(false)
@@ -97,6 +91,7 @@ object CreativeVectorThrusterGameTests {
             helper.assertTrue(thruster.currentThrust == 0f, "top lever caused physical thrust through the computer")
         }
         sequence.thenExecuteAfter(10) {
+            PeripheralNetworkGameTestFixtures.bind(helper, helper.absolutePos(computer), helper.absolutePos(engine))
             nameDevice(helper, engine, "t1")
             assertStopped()
         }
@@ -140,14 +135,21 @@ object CreativeVectorThrusterGameTests {
         val computer = BlockPos(2, 2, 3)
         val engines = listOf("fl", "fr", "bl", "br").mapIndexed { index, name -> name to BlockPos(5, 2, index + 2) }
         helper.setBlock(computer, CompuktersRegistry.COMPUTER.get())
-        val cable = CompuktersRegistry.PERIPHERAL_CABLE.get()
-        helper.setBlock(BlockPos(3, 2, 3), cable)
-        for (z in 2..5) helper.setBlock(BlockPos(4, 2, z), cable)
         val block = BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("createpropulsion", "creative_vector_thruster"))
         engines.forEach { (_, position) -> helper.setBlock(position, block) }
         val scenario = GuestComputerScenario(helper, computer)
         val sequence = helper.startSequence()
         sequence.thenExecuteAfter(5) {
+            PeripheralNetworkGameTestFixtures.bind(
+                helper,
+                *listOf(
+                    computer,
+                    *engines
+                        .map {
+                            it.second
+                        }.toTypedArray(),
+                ).map(helper::absolutePos).toTypedArray(),
+            )
             engines.forEach { (name, position) -> nameDevice(helper, position, name) }
         }
         scenario.prepare(sequence, HANDLE_LIST)
@@ -195,12 +197,9 @@ object CreativeVectorThrusterGameTests {
     fun guestVectorControlLifetime(helper: GameTestHelper) {
         val first = BlockPos(2, 2, 3)
         val second = BlockPos(4, 2, 5)
-        val link = BlockPos(3, 2, 3)
         val engine = BlockPos(5, 2, 3)
-        val cable = CompuktersRegistry.PERIPHERAL_CABLE.get()
         helper.setBlock(first, CompuktersRegistry.COMPUTER.get())
         helper.setBlock(second, CompuktersRegistry.COMPUTER.get())
-        listOf(link, BlockPos(4, 2, 3), BlockPos(4, 2, 4)).forEach { helper.setBlock(it, cable) }
         val block = BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("createpropulsion", "creative_vector_thruster"))
         helper.assertTrue(block != Blocks.AIR, "Creative Vector Thruster is not registered")
         helper.setBlock(engine, block)
@@ -210,10 +209,7 @@ object CreativeVectorThrusterGameTests {
         val contender = GuestComputerScenario(helper, second)
         val sequence = helper.startSequence()
         sequence.thenExecuteAfter(5) {
-            helper.assertTrue(
-                helper.getBlockState(BlockPos(4, 2, 3)).getValue(PeripheralCableBlock.EAST),
-                "Cable did not connect to Creative Vector Thruster",
-            )
+            PeripheralNetworkGameTestFixtures.bind(helper, *listOf(first, second, engine).map(helper::absolutePos).toTypedArray())
             nameDevice(helper, engine)
         }
         owner.prepare(sequence, OWNER)
@@ -266,21 +262,21 @@ object CreativeVectorThrusterGameTests {
                 thruster.currentVectorX == 0.013f && thruster.currentVectorY == -0.007f,
                 "Ordinary upstream ticks did not move the nozzle to its owned target",
             )
-            helper.setBlock(link, Blocks.AIR)
+            PeripheralNetworkGameTestFixtures.unbind(helper, helper.absolutePos(first))
         }
         sequence.thenWaitUntil {
             helper.assertTrue(
                 thruster.throttle == 1f && !thruster.hasPeripheralThrustOverride(),
-                "Cable loss did not restore vector redstone/thrust",
+                "Network removal did not restore vector redstone/thrust",
             )
             helper.assertTrue(
                 thruster.targetVectorX == -0.4f && thruster.targetVectorY == 0.6f,
-                "Cable loss did not restore live link signals",
+                "Network removal did not restore live link signals",
             )
         }
         contender.resume(sequence)
         contender.awaitMarker(sequence, "vector-contender")
-        sequence.thenExecute { helper.setBlock(link, cable) }
+        sequence.thenExecute { PeripheralNetworkGameTestFixtures.bind(helper, helper.absolutePos(second), helper.absolutePos(first)) }
         owner.resume(sequence)
         owner.awaitMarker(sequence, "vector-stale")
         contender.resume(sequence)
@@ -323,7 +319,6 @@ object CreativeVectorThrusterGameTests {
         val engine = BlockPos(5, 2, 3)
         val block = BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("createpropulsion", "creative_vector_thruster"))
         helper.setBlock(computer, CompuktersRegistry.COMPUTER.get())
-        listOf(BlockPos(3, 2, 3), BlockPos(4, 2, 3)).forEach { helper.setBlock(it, CompuktersRegistry.PERIPHERAL_CABLE.get()) }
         helper.setBlock(engine, block)
         val container = requireNotNull(SubLevelContainer.getContainer(helper.level))
         val physics = container.physicsSystem()
@@ -332,7 +327,10 @@ object CreativeVectorThrusterGameTests {
         var body: ServerSubLevel? = null
         val guest = GuestComputerScenario(helper, computer)
         val sequence = helper.startSequence()
-        sequence.thenExecuteAfter(5) { nameDevice(helper, engine) }
+        sequence.thenExecuteAfter(5) {
+            PeripheralNetworkGameTestFixtures.bind(helper, helper.absolutePos(computer), helper.absolutePos(engine))
+            nameDevice(helper, engine)
+        }
         guest.prepare(sequence, ASSEMBLY)
         guest.awaitMarker(sequence, "vector-assembly-owned")
         sequence.thenExecute {
@@ -407,15 +405,9 @@ object CreativeVectorThrusterGameTests {
                 "bl" to BlockPos(0, 2, 5),
                 "br" to BlockPos(0, 2, 1),
             )
-        val positions = mutableListOf<BlockPos>()
-        val cable = CompuktersRegistry.PERIPHERAL_CABLE.get()
-        for (x in 0..4) {
-            for (z in 1..5) {
-                val position = BlockPos(x, 2, z)
-                positions.add(position)
-                helper.setBlock(position, cable)
-            }
-        }
+        // Assembly requires connected blocks; structural supports replace the obsolete cable lattice.
+        val positions = (0..4).flatMap { x -> (1..5).map { z -> BlockPos(x, 2, z) } }
+        positions.forEach { helper.setBlock(it, Blocks.STONE) }
         helper.setBlock(computer, CompuktersRegistry.COMPUTER.get())
         val block = BuiltInRegistries.BLOCK.get(ResourceLocation.fromNamespaceAndPath("createpropulsion", "creative_vector_thruster"))
         engines.forEach { (_, position) ->
@@ -441,6 +433,14 @@ object CreativeVectorThrusterGameTests {
                 )
             container.addForceLoadTicket(requireNotNull(body), SubLevelLoadingTicketType.COMMAND_FORCED, MinecraftUnit.INSTANCE)
             currentPosition = requireNotNull(body).plot.centerBlock
+            PeripheralNetworkGameTestFixtures.bind(
+                helper,
+                currentPosition,
+                *engines
+                    .map {
+                        currentPosition.offset(it.second.subtract(computer))
+                    }.toTypedArray(),
+            )
             engines.forEach { (name, position) ->
                 nameDeviceAt(helper, currentPosition.offset(position.subtract(computer)), name)
             }
@@ -497,16 +497,7 @@ object CreativeVectorThrusterGameTests {
         absolute: BlockPos,
         name: String,
     ) {
-        val player = FakePlayerFactory.getMinecraft(helper.level)
-        player.setPos(absolute.x + 0.5, absolute.y + 0.5, absolute.z + 0.5)
-        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack(CompuktersRegistry.PERIPHERAL_CONFIGURATOR_ITEM.get()))
-        val result =
-            PeripheralConfiguratorServer.save(
-                player,
-                InteractionHand.MAIN_HAND,
-                PeripheralConfiguratorContext(absolute, Direction.WEST),
-                name,
-            )
+        val result = PeripheralNetworkGameTestFixtures.name(helper, absolute, name)
         helper.assertTrue(result == PeripheralConfiguratorSaveResult.NAMED_DEVICE, "Could not name Creative Vector Thruster: $result")
     }
 

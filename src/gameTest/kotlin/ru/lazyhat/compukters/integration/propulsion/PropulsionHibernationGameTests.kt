@@ -37,21 +37,16 @@ import net.minecraft.gametest.framework.GameTestInfo
 import net.minecraft.gametest.framework.GameTestListener
 import net.minecraft.gametest.framework.GameTestRunner
 import net.minecraft.resources.ResourceLocation
-import net.minecraft.world.InteractionHand
-import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.state.properties.BlockStateProperties
-import net.neoforged.neoforge.common.util.FakePlayerFactory
 import net.neoforged.neoforge.event.server.ServerStoppingEvent
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate
 import ru.lazyhat.compukters.core.device.computer.ProgramComputerState
 import ru.lazyhat.compukters.impl.fs.NeoForgeWorldFileSystemStores
 import ru.lazyhat.compukters.impl.registry.CompuktersRegistry
 import ru.lazyhat.compukters.minecraft.computer.ComputerBlockEntity
-import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorContext
 import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorSaveResult
-import ru.lazyhat.compukters.minecraft.peripheral.PeripheralConfiguratorServer
 import net.minecraft.util.Unit as MinecraftUnit
 
 @PrefixGameTestTemplate(false)
@@ -164,6 +159,10 @@ object PropulsionHibernationGameTests {
             }
         }
         sequence.thenExecuteAfter(10) {
+            PeripheralNetworkGameTestFixtures.bind(helper, origin, origin.below(), origin.east())
+            if (conflict) {
+                PeripheralNetworkGameTestFixtures.bind(helper, origin, helper.absolutePos(relative.below().west()))
+            }
             nameDevice(helper, origin.below(), "vector")
             nameDevice(helper, origin.east(), "ordinary")
         }
@@ -340,18 +339,7 @@ object PropulsionHibernationGameTests {
         position: BlockPos,
         name: String,
     ) {
-        val player = FakePlayerFactory.getMinecraft(helper.level)
-        player.setPos(position.x + 0.5, position.y + 0.5, position.z + 0.5)
-        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack(CompuktersRegistry.PERIPHERAL_CONFIGURATOR_ITEM.get()))
-        helper.assertTrue(
-            PeripheralConfiguratorServer.save(
-                player,
-                InteractionHand.MAIN_HAND,
-                PeripheralConfiguratorContext(position, Direction.WEST),
-                name,
-            ) ==
-                PeripheralConfiguratorSaveResult.NAMED_DEVICE,
-            "Could not name $name engine",
-        )
+        val result = PeripheralNetworkGameTestFixtures.name(helper, position, name)
+        helper.assertTrue(result == PeripheralConfiguratorSaveResult.NAMED_DEVICE, "Could not name $name engine: $result")
     }
 }
