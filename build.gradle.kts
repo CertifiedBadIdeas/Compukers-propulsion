@@ -105,7 +105,7 @@ dependencies {
     compileOnly(sableCompanion)
     // Loom dev runs do not discover Sable's Jar-in-Jar runtime dependencies automatically.
     modRuntimeOnly(sableLibraries)
-    modRuntimeOnly("maven.modrinth:create-aeronautics:Vzp221Un") { isTransitive = false }
+    modRuntimeOnly("maven.modrinth:create-aeronautics:44pLdPGg") { isTransitive = false }
     modRuntimeOnly(aeronauticsLibraries)
     forgeRuntimeLibrary(veilLibraries)
     compileOnly("ru.lazyhat.compukters:compukters-addon-api:$addonSdkVersion")
