@@ -177,8 +177,9 @@ val verifyProductionJar = tasks.register("verifyProductionJar") {
     group = "verification"
     dependsOn(productionJar)
     inputs.file(productionJar.flatMap { it.archiveFile })
+    val checkedArchive = productionJar.flatMap { it.archiveFile }
     doLast {
-        val archive = productionJar.get().archiveFile.get().asFile
+        val archive = checkedArchive.get().asFile
         ZipFile(archive).use { zip ->
             val entries = zip.entries().asSequence().filterNot { it.isDirectory }.map { it.name }.toList()
             listOf(
