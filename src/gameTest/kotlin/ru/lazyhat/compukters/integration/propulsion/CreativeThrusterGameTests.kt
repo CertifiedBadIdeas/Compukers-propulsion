@@ -36,6 +36,7 @@ import net.minecraft.gametest.framework.GameTestRunner
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.level.block.Blocks
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.fml.ModList
 import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.neoforge.event.RegisterGameTestsEvent
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate
@@ -245,6 +246,7 @@ object CreativeThrusterGameTests {
             engine.setThrottle(0.375)
             val snapshot = engine.state()
             check(snapshot.throttle == 0.375)
+            check(listOf(snapshot)[0] == snapshot)
             check(snapshot.thrustPercent == 50)
             check(snapshot.configuredThrustKn > 0.0)
             check(snapshot.width == 1)
@@ -254,6 +256,7 @@ object CreativeThrusterGameTests {
             try { engine.state() } catch (failure: compukter.io.IOException) { rejected = true }
             check(rejected)
             check(snapshot.throttle == 0.375)
+            check(listOf(snapshot)[0] == snapshot)
             println("owner-stale")
             readln()
             val next = CreativeThruster.named("engine")
@@ -274,17 +277,16 @@ object CreativeThrusterGameTests {
         """
         import propulsion.thrusters.CreativeThruster
         fun main() {
+            var busy = false
+            try { CreativeThruster.named("engine") } catch (failure: IllegalStateException) { busy = true }
+            check(busy)
+            println("contender-busy")
+            readln()
             val engine = CreativeThruster.named("engine")
             check(engine == CreativeThruster.named("engine"))
             check(CreativeThruster.first() == engine)
             check(CreativeThruster.all().size == 1)
             check(CreativeThruster.firstOrNull { it.state().width < 0 } == null)
-            check(engine.state().throttle == 0.375)
-            var busy = false
-            try { engine.setThrottle(0.25) } catch (failure: IllegalStateException) { busy = true }
-            check(busy)
-            println("contender-busy")
-            readln()
             engine.setThrottle(0.25)
             println("contender-acquired")
             readln()
@@ -301,7 +303,10 @@ object PropulsionGameTestRegistration {
     fun register(event: RegisterGameTestsEvent) {
         event.register(CreativeThrusterGameTests::class.java)
         event.register(CreativeVectorThrusterGameTests::class.java)
-        event.register(CreativeVectorThrusterLatencyGameTests::class.java)
+        // These probes compile both addon APIs; the standalone addon run has upstream Sable only.
+        if (ModList.get().isLoaded("compukters_sable")) {
+            event.register(CreativeVectorThrusterLatencyGameTests::class.java)
+        }
         event.register(PropulsionHibernationGameTests::class.java)
     }
 }

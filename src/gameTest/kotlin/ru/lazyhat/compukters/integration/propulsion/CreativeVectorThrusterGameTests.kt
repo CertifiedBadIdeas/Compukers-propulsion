@@ -551,6 +551,18 @@ object CreativeVectorThrusterGameTests {
         import propulsion.thrusters.CreativeVectorThruster
         fun main() {
             val e = CreativeVectorThruster.named("engine")
+            var bad = false
+            try { e.setThrottle(1.1) } catch (failure: IllegalArgumentException) { bad = true }
+            check(bad)
+            bad = false
+            try { e.setThrustKn(-1.0) } catch (failure: IllegalArgumentException) { bad = true }
+            check(bad)
+            bad = false
+            try { e.setThrustKn(e.state().maxThrustKn + 1.0) } catch (failure: IllegalStateException) { bad = true }
+            check(bad)
+            var invalid = false
+            try { e.setVector(0.0 / 0.0, 0.0) } catch (e: IllegalArgumentException) { invalid = true }
+            check(invalid)
             val peripheral: compukter.peripheral.Peripheral = e
             check(peripheral == e)
             check(peripheral is CreativeVectorThruster)
@@ -567,6 +579,9 @@ object CreativeVectorThrusterGameTests {
             e.setThrottle(0.375)
             val s = e.state()
             check(s.customThrust && s.thrustKn == 123.0 && s.throttle == 0.375)
+            val boxed: Any = s
+            check(boxed is propulsion.thrusters.CreativeVectorThrusterState && boxed.thrustKn == s.thrustKn)
+            check(listOf(s)[0] == s)
             check(s.targetVectorX > 0.0129 && s.targetVectorX < 0.0131)
             check(s.targetVectorY > -0.0071 && s.targetVectorY < -0.0069)
             println("vector-owned")
@@ -599,25 +614,12 @@ object CreativeVectorThrusterGameTests {
         """
         import propulsion.thrusters.CreativeVectorThruster
         fun main() {
-            val engine = CreativeVectorThruster.named("engine")
-            var bad = false
-            try { engine.setThrottle(1.1) } catch (failure: IllegalArgumentException) { bad = true }
-            check(bad)
-            bad = false
-            try { engine.setThrustKn(-1.0) } catch (failure: IllegalArgumentException) { bad = true }
-            check(bad)
-            bad = false
-            try { engine.setThrustKn(engine.state().maxThrustKn + 1.0) } catch (failure: IllegalStateException) { bad = true }
-            check(bad)
-            var invalid = false
-            try { engine.setVector(0.0 / 0.0, 0.0) } catch (e: IllegalArgumentException) { invalid = true }
-            check(invalid)
-            check(engine.state().throttle == 0.375)
             var busy = false
-            try { engine.setVector(0.0, 0.0) } catch (e: IllegalStateException) { busy = true }
+            try { CreativeVectorThruster.named("engine") } catch (e: IllegalStateException) { busy = true }
             check(busy)
             println("vector-busy")
             readln()
+            val engine = CreativeVectorThruster.named("engine")
             engine.setThrottle(0.25)
             engine.setVector(0.2, -0.2)
             engine.setThrustKn(70.0)

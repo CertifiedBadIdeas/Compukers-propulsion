@@ -26,3 +26,8 @@ There is no automatic fallback between source and released dependencies.
 
 Only pushed version tags publish this addon. Its release contains the production JAR, named development JAR,
 Guest API bundle and SHA256 inventory. Ordinary commits produce no GitHub Releases.
+
+Standalone `runGameTestServer` verifies Propulsion devices and Guest records. The snapshot-to-nozzle latency
+probes additionally require the Compukters Sable addon (not only upstream Sable), and register when it is loaded,
+as in the all-addon development stand. Standalone fixtures use the current runtime's Ctrl+C cancellation and
+check competing ownership at peripheral lookup.

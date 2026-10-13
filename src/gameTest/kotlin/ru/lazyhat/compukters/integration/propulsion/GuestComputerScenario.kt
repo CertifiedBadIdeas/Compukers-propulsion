@@ -96,7 +96,7 @@ internal class GuestComputerScenario(
 
     fun terminate(sequence: GameTestSequence) {
         sequence.thenExecute {
-            operation = computer.submitTerminalKeyAsync(TerminalKey.T, TerminalKeyAction.PRESS, setOf(TerminalModifier.CONTROL))
+            operation = computer.submitTerminalKeyAsync(TerminalKey.C, TerminalKeyAction.PRESS, setOf(TerminalModifier.CONTROL))
         }
         awaitOperation(sequence)
     }
