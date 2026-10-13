@@ -270,7 +270,11 @@ internal class VectorThrusterHost(
 
     companion object {
         val contract =
-            CompuktersPeripheralContract("propulsion:creative_vector_thruster", DEVICE_KEY) { location ->
+            CompuktersPeripheralContract(
+                "propulsion:creative_vector_thruster",
+                DEVICE_KEY,
+                "propulsion.thrusters.CreativeVectorThruster",
+            ) { location ->
                 resolve(location.level, location.position)?.let { entity ->
                     BoundThruster(entity) {
                         resolve(location.level, location.position) === entity && location.isReachable()

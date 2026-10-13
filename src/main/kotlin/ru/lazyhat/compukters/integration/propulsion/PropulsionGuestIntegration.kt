@@ -47,7 +47,7 @@ import ru.lazyhat.compukters.lang.runtime.vm.HostFailureKind
 internal object PropulsionGuestIntegration {
     private const val DEVICE_KEY = "creative_thruster"
     private val contract =
-        CompuktersPeripheralContract("propulsion:creative_thruster", DEVICE_KEY) { location ->
+        CompuktersPeripheralContract("propulsion:creative_thruster", DEVICE_KEY, "propulsion.thrusters.CreativeThruster") { location ->
             controller(location.level, location.position)?.let { entity ->
                 ThrusterHost.BoundThruster(entity) {
                     controller(location.level, location.position) === entity && location.isReachable()
