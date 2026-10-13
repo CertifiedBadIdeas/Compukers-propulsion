@@ -22,7 +22,7 @@ import compukter.peripheral.Peripheral
 import compukter.peripheral.TypedPeripheralProvider
 
 /** Immutable state observed on the server; thrust is expressed in kilonewtons. */
-public data class CreativeThrusterState(
+public value class CreativeThrusterState(
     public val gameTick: Long,
     public val throttle: Double,
     public val effectiveThrottle: Double,

@@ -22,7 +22,7 @@ import compukter.peripheral.Peripheral
 import compukter.peripheral.TypedPeripheralProvider
 
 /** Server observation. Thrust is in kN; vector coordinates are local normalized nozzle controls. */
-public data class CreativeVectorThrusterState(
+public value class CreativeVectorThrusterState(
     public val gameTick: Long,
     public val throttle: Double,
     public val effectiveThrottle: Double,
@@ -41,7 +41,7 @@ public data class CreativeVectorThrusterState(
 /** Mount relative to the calling computer's block, in construction axes (world axes outside a construction).
  * Empty constructionId denotes the ordinary world. Neutral force direction ignores live nozzle steering.
  */
-public data class CreativeVectorThrusterMount(
+public value class CreativeVectorThrusterMount(
     public val constructionId: String,
     public val offsetX: Int,
     public val offsetY: Int,
