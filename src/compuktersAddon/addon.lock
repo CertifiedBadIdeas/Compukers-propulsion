@@ -2,6 +2,8 @@ lock 2
 record propulsion.thrusters.CreativeThrusterState propulsion.thrusters.CreativeThrusterState{gameTick:I64,throttle:F64,effectiveThrottle:F64,thrustPercent:I32,configuredThrustKn:F64,currentThrustKn:F64,startupProgress:F64,active:BOOL,startingUp:BOOL,fadingOut:BOOL,width:I32,unobstructedBlocks:I32}
 record propulsion.thrusters.CreativeVectorThrusterMount propulsion.thrusters.CreativeVectorThrusterMount{constructionId:STRING,offsetX:I32,offsetY:I32,offsetZ:I32,forceX:I32,forceY:I32,forceZ:I32}
 record propulsion.thrusters.CreativeVectorThrusterState propulsion.thrusters.CreativeVectorThrusterState{gameTick:I64,throttle:F64,effectiveThrottle:F64,thrustKn:F64,maxThrustKn:F64,customThrust:BOOL,currentThrustKn:F64,targetVectorX:F64,targetVectorY:F64,currentVectorX:F64,currentVectorY:F64,startupProgress:F64,active:BOOL}
+record propulsion.thrusters.LiquidThrusterMount propulsion.thrusters.LiquidThrusterMount{constructionId:STRING,offsetX:I32,offsetY:I32,offsetZ:I32,forceX:I32,forceY:I32,forceZ:I32}
+record propulsion.thrusters.LiquidThrusterState propulsion.thrusters.LiquidThrusterState{gameTick:I64,throttle:F64,effectiveThrottle:F64,nominalThrustKn:F64,currentThrustKn:F64,fuel:STRING,fuelAmountMb:I32,fuelCapacityMb:I32,usableFuel:BOOL,startupProgress:F64,active:BOOL,unobstructedBlocks:I32}
 operation propulsion propulsion 1 0 active propulsion.thrusters.ThrusterBindings.acquire fun(String):Int
 operation propulsion propulsion 1 1 active propulsion.thrusters.ThrusterBindings.close fun(Int):Unit
 operation propulsion propulsion 1 2 active propulsion.thrusters.ThrusterBindings.setThrottle fun(Int,Double):Unit
@@ -15,3 +17,8 @@ operation propulsion propulsion 1 9 active propulsion.thrusters.VectorThrusterBi
 operation propulsion propulsion 1 10 active propulsion.thrusters.VectorThrusterBindings.vectorSetVector fun(Int,Double,Double):Unit
 operation propulsion propulsion 1 11 active propulsion.thrusters.VectorThrusterBindings.vectorState fun(Int):CreativeVectorThrusterState
 operation propulsion propulsion 1 12 active propulsion.thrusters.VectorThrusterBindings.vectorMount fun(Int):CreativeVectorThrusterMount
+operation propulsion propulsion 1 13 active propulsion.thrusters.LiquidThrusterBindings.liquidAcquire fun(String):Int
+operation propulsion propulsion 1 14 active propulsion.thrusters.LiquidThrusterBindings.liquidClose fun(Int):Unit
+operation propulsion propulsion 1 15 active propulsion.thrusters.LiquidThrusterBindings.liquidMount fun(Int):LiquidThrusterMount
+operation propulsion propulsion 1 16 active propulsion.thrusters.LiquidThrusterBindings.liquidSetThrottle fun(Int,Double):Unit
+operation propulsion propulsion 1 17 active propulsion.thrusters.LiquidThrusterBindings.liquidState fun(Int):LiquidThrusterState

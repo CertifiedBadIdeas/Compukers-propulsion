@@ -24,4 +24,6 @@ public interface TransientThrusterControl {
     String compukters$persistentIdentity();
     float compukters$digitalInput();
     boolean compukters$peripheralMode();
+    /** Read-only native atmospheric multiplier, without advancing engines or fuel. */
+    double compukters$atmosphericFactor();
 }

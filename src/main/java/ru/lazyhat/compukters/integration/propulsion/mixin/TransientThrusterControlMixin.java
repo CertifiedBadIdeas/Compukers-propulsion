@@ -38,6 +38,11 @@ import java.util.UUID;
 public abstract class TransientThrusterControlMixin implements TransientThrusterControl {
     private static final String COMPUKTERS_CONTROL = "compukters_propulsion:transient_control";
 
+    @Shadow protected abstract double calculateAtmosphericFactor();
+
+    @Override
+    public double compukters$atmosphericFactor() { return calculateAtmosphericFactor(); }
+
     @Shadow protected float digitalInput;
     @Shadow private float fadePower;
     @Shadow protected ControlMode controlMode;

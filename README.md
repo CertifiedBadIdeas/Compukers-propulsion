@@ -1,6 +1,6 @@
 # Compukters: Propulsion
 
-Independent Creative Thruster and Creative Vector Thruster control for Minecraft 1.21.1.
+Independent standard Liquid Thruster, Creative Thruster and Creative Vector Thruster control for Minecraft 1.21.1.
 
 Installation, upstream versions, Guest Kotlin examples, device lifetime and development commands are maintained in the
 [canonical Wiki guide](https://certifiedbadideas.github.io/Compukters/PROPULSION/).
@@ -31,3 +31,21 @@ Standalone `runGameTestServer` verifies Propulsion devices and Guest records. Th
 probes additionally require the Compukters Sable addon (not only upstream Sable), and register when it is loaded,
 as in the all-addon development stand. Standalone fixtures use the current runtime's Ctrl+C cancellation and
 check competing ownership at peripheral lookup.
+
+## Standard liquid engines (API 3.1)
+
+`propulsion.thrusters.LiquidThruster` supports independent ordinary single-block liquid thrusters.
+Use the normal wired/named peripheral network and `LiquidThruster.named("engine")` or `all()`.
+`mount()` reports the construction, offset from the computer and neutral force axis. `state()`
+reports server tick, native throttle/startup, current and nominal thrust (kN), fuel ID and finite
+stock/capacity (mB). Nominal thrust excludes startup, throttle and obstruction; current native thrust
+is authoritative. No observation advances the engine or consumes fuel.
+
+`setThrottle(0.0..1.0)` acquires exclusive program control. Zero clears even tiny digital commands.
+Propulsion owns fuel consumption, startup, obstruction and force application. Dry engines remain
+observable, with zero usable nominal thrust; the Guest program decides how to handle depletion.
+`close()`, cancellation, disconnect, replacement and unload release the lease and restore native
+redstone. Native redstone may therefore power an engine after program control ends. Program leases
+are not serialized into ship/chunk payloads; compatible VM hibernation checkpoints restore them
+through the normal peripheral identity checks. Solid, ion, vector-liquid and multiblock engines are
+outside this API. Existing Creative operation IDs remain unchanged.

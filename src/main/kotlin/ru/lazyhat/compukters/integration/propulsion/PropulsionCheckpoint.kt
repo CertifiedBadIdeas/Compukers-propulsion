@@ -35,10 +35,11 @@ internal data class ThrusterCommand(
 internal data class PropulsionCheckpoint(
     val ordinary: List<ThrusterCommand>,
     val vector: List<ThrusterCommand>,
+    val liquid: List<ThrusterCommand> = emptyList(),
 ) {
     fun encode(): ByteArray {
         val writer = ResourceCheckpointWriter()
-        writer.int(1)
+        writer.int(2)
 
         fun commands(
             values: List<ThrusterCommand>,
@@ -60,17 +61,20 @@ internal data class PropulsionCheckpoint(
                 value.thrustOutput?.let { writer.int(it.toRawBits()) }
             }
         }
-        require(ordinary.size + vector.size <= 1024)
-        require((ordinary + vector).map { it.handle }.distinct().size == ordinary.size + vector.size)
+        require(ordinary.size + vector.size + liquid.size <= 1024)
+        require((ordinary + vector + liquid).map { it.handle }.distinct().size == ordinary.size + vector.size + liquid.size)
+        validateLiquid(liquid)
         commands(ordinary, false)
         commands(vector, true)
+        commands(liquid, true)
         return writer.finish()
     }
 
     companion object {
         fun decode(bytes: ByteArray): PropulsionCheckpoint {
             val reader = ResourceCheckpointReader(bytes)
-            require(reader.int() == 1) { "Unsupported Propulsion resource format" }
+            val version = reader.int()
+            require(version in 1..2) { "Unsupported Propulsion resource format" }
 
             fun flag(): Boolean = reader.int().also { require(it in 0..1) } == 1
 
@@ -84,11 +88,21 @@ internal data class PropulsionCheckpoint(
                     val thrust = if (flag()) Float.fromBits(reader.int()) else null
                     ThrusterCommand(handle, peripheralMode, digitalInput, percent, steering?.first, steering?.second, thrust)
                 }.also { validate(it, vector) }
-            val result = PropulsionCheckpoint(commands(false), commands(true))
+            val result = PropulsionCheckpoint(commands(false), commands(true), if (version == 2) commands(true) else emptyList())
             reader.finish()
-            require(result.ordinary.size + result.vector.size <= 1024)
-            require((result.ordinary + result.vector).map { it.handle }.distinct().size == result.ordinary.size + result.vector.size)
+            require(result.ordinary.size + result.vector.size + result.liquid.size <= 1024)
+            require(
+                (result.ordinary + result.vector + result.liquid).map { it.handle }.distinct().size ==
+                    result.ordinary.size + result.vector.size + result.liquid.size,
+            )
+            validateLiquid(result.liquid)
             return result
+        }
+
+        private fun validateLiquid(values: List<ThrusterCommand>) {
+            require(values.all { it.thrustPercent == 0 && it.vectorX == null && it.vectorY == null && it.thrustOutput == null }) {
+                "Liquid engines support throttle commands only"
+            }
         }
 
         private fun validate(

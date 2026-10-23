@@ -20,6 +20,7 @@ package ru.lazyhat.compukters.integration.propulsion
 
 import dev.propulsionteam.propulsionsimulated.PropulsionConfig
 import dev.propulsionteam.propulsionsimulated.content.thruster.AbstractThrusterBlockEntity.ControlMode
+import dev.propulsionteam.propulsionsimulated.content.thruster.thruster.ThrusterBlockEntity
 import dev.propulsionteam.propulsionsimulated.content.thruster.thruster.creative_thruster.CreativeThrusterBlockEntity
 import dev.propulsionteam.propulsionsimulated.content.thruster.vector_thruster.creative_vector_thruster.CreativeVectorThrusterBlockEntity
 import net.minecraft.server.level.ServerLevel
@@ -29,6 +30,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent
 import propulsion.CreativeThrusterState
 import propulsion.CreativeVectorThrusterMount
 import propulsion.CreativeVectorThrusterState
+import propulsion.LiquidThrusterMount
+import propulsion.LiquidThrusterState
 import propulsion.PropulsionAddonContract
 import propulsion.PropulsionCapabilityHandler
 import ru.lazyhat.compukters.api.addon.AddonCallResult
@@ -56,12 +59,14 @@ internal object PropulsionGuestIntegration {
         }
     private val leases = ThrusterControlLeases<CreativeThrusterBlockEntity>()
     private val vectorLeases = ThrusterControlLeases<CreativeVectorThrusterBlockEntity>()
+    private val liquidLeases = ThrusterControlLeases<ThrusterBlockEntity>()
 
     @JvmStatic
     fun isControlled(entity: Any): Boolean =
         when (entity) {
             is CreativeThrusterBlockEntity -> leases.contains(entity)
             is CreativeVectorThrusterBlockEntity -> vectorLeases.contains(entity)
+            is ThrusterBlockEntity -> liquidLeases.contains(entity)
             else -> false
         }
 
@@ -74,16 +79,21 @@ internal object PropulsionGuestIntegration {
                     ?: VectorThrusterHost.resolve(contact.level, contact.position)?.let {
                         CompuktersPeripheralDevice(it.blockPos, VectorThrusterHost.DEVICE_KEY)
                     }
+                    ?: LiquidThrusterHost.resolve(contact.level, contact.position)?.let {
+                        CompuktersPeripheralDevice(it.blockPos, LiquidThrusterHost.DEVICE_KEY)
+                    }
             },
-            listOf(contract, VectorThrusterHost.contract),
+            listOf(contract, VectorThrusterHost.contract, LiquidThrusterHost.contract),
         )
         NeoForge.EVENT_BUS.addListener<ServerTickEvent.Post> {
             leases.reap()
             vectorLeases.reap()
+            liquidLeases.reap()
         }
         NeoForge.EVENT_BUS.addListener<ServerStoppedEvent> {
             leases.releaseAll()
             vectorLeases.releaseAll()
+            liquidLeases.releaseAll()
         }
     }
 
@@ -122,6 +132,20 @@ internal object PropulsionGuestIntegration {
         }
 
         private val vectorHost = VectorThrusterHost(computer, vectorLeases)
+        private val liquidHost = LiquidThrusterHost(computer, liquidLeases)
+
+        override fun liquidAcquire(name: String): AddonCallResult<Int> = liquidHost.acquire(name)
+
+        override fun liquidMount(handle: Int): AddonCallResult<LiquidThrusterMount> = liquidHost.mount(handle)
+
+        override fun liquidState(handle: Int): AddonCallResult<LiquidThrusterState> = liquidHost.state(handle)
+
+        override fun liquidSetThrottle(
+            handle: Int,
+            throttle: Double,
+        ): AddonCallResult<Unit> = liquidHost.setThrottle(handle, throttle)
+
+        override fun liquidClose(handle: Int): AddonCallResult<Unit> = liquidHost.close(handle)
 
         override fun vectorAcquire(name: String): AddonCallResult<Int> = vectorHost.acquire(name)
 
@@ -222,7 +246,7 @@ internal object PropulsionGuestIntegration {
                         bound.entity.thrustConfig + 1,
                     )
                 }
-            return PropulsionCheckpoint(ordinary, vectorHost.checkpoint()).encode()
+            return PropulsionCheckpoint(ordinary, vectorHost.checkpoint(), liquidHost.checkpoint()).encode()
         }
 
         override fun restoreCheckpoint(state: ByteArray) {
@@ -249,6 +273,7 @@ internal object PropulsionGuestIntegration {
                     bound.entity.setChanged()
                 }
                 vectorHost.restoreCheckpoint(saved.vector)
+                liquidHost.restoreCheckpoint(saved.liquid)
             } catch (failure: Exception) {
                 runCatching(::reset).onFailure(failure::addSuppressed)
                 throw failure
@@ -261,7 +286,11 @@ internal object PropulsionGuestIntegration {
                 leases.releaseOwner(this)
             } finally {
                 try {
-                    vectorHost.reset()
+                    try {
+                        vectorHost.reset()
+                    } finally {
+                        liquidHost.reset()
+                    }
                 } finally {
                     handles.clear()
                 }

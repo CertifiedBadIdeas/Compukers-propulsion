@@ -45,7 +45,7 @@ class PropulsionCheckpointTest {
         val valid = PropulsionCheckpoint(listOf(ThrusterCommand(1, true, 0.5f, 20)), emptyList()).encode()
         assertFailsWith<IllegalArgumentException> { PropulsionCheckpoint.decode(valid + byteArrayOf(0)) }
         valid.indices.forEach { size -> assertFailsWith<IllegalArgumentException> { PropulsionCheckpoint.decode(valid.copyOf(size)) } }
-        assertFailsWith<IllegalArgumentException> { PropulsionCheckpoint.decode(valid.copyOf().also { it[0] = 2 }) }
+        assertFailsWith<IllegalArgumentException> { PropulsionCheckpoint.decode(valid.copyOf().also { it[0] = 3 }) }
         assertFailsWith<IllegalArgumentException> { PropulsionCheckpoint.decode(valid.copyOf().also { it[12] = 2 }) }
         listOf(
             ThrusterCommand(0, true, 0f, 20),
@@ -67,6 +67,31 @@ class PropulsionCheckpointTest {
                 emptyList(),
                 List(1025) { ThrusterCommand(it + 1, false, 0f) },
             ).encode()
+        }
+    }
+
+    @Test
+    fun `legacy creative checkpoints remain readable`() {
+        val snapshot = PropulsionCheckpoint(listOf(ThrusterCommand(1, true, 0.5f, 20)), emptyList())
+        // Version one had the same fields and two lists; version two adds the liquid command list.
+        val old =
+            snapshot
+                .encode()
+                .dropLast(4)
+                .toByteArray()
+                .also { it[0] = 1 }
+        assertEquals(snapshot, PropulsionCheckpoint.decode(old))
+    }
+
+    @Test
+    fun `liquid ownership round trips and cannot carry creative overrides`() {
+        val snapshot = PropulsionCheckpoint(emptyList(), emptyList(), listOf(ThrusterCommand(7, true, 0.35f)))
+        assertEquals(snapshot, PropulsionCheckpoint.decode(snapshot.encode()))
+        assertFailsWith<IllegalArgumentException> {
+            snapshot.copy(liquid = listOf(ThrusterCommand(7, true, 0.35f, thrustOutput = 10f))).encode()
+        }
+        assertFailsWith<IllegalArgumentException> {
+            snapshot.copy(vector = listOf(ThrusterCommand(7, true, 0.35f))).encode()
         }
     }
 }
