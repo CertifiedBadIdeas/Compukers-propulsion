@@ -1,4 +1,5 @@
 lock 2
+record propulsion.heat.LiquidBurnerState propulsion.heat.LiquidBurnerState{gameTick:I64,fuel:STRING,amountMb:I32,capacityMb:I32,burning:BOOL}
 record propulsion.thrusters.CreativeThrusterState propulsion.thrusters.CreativeThrusterState{gameTick:I64,throttle:F64,effectiveThrottle:F64,thrustPercent:I32,configuredThrustKn:F64,currentThrustKn:F64,startupProgress:F64,active:BOOL,startingUp:BOOL,fadingOut:BOOL,width:I32,unobstructedBlocks:I32}
 record propulsion.thrusters.CreativeVectorThrusterMount propulsion.thrusters.CreativeVectorThrusterMount{constructionId:STRING,offsetX:I32,offsetY:I32,offsetZ:I32,forceX:I32,forceY:I32,forceZ:I32}
 record propulsion.thrusters.CreativeVectorThrusterState propulsion.thrusters.CreativeVectorThrusterState{gameTick:I64,throttle:F64,effectiveThrottle:F64,thrustKn:F64,maxThrustKn:F64,customThrust:BOOL,currentThrustKn:F64,targetVectorX:F64,targetVectorY:F64,currentVectorX:F64,currentVectorY:F64,startupProgress:F64,active:BOOL}
@@ -22,3 +23,4 @@ operation propulsion propulsion 1 14 active propulsion.thrusters.LiquidThrusterB
 operation propulsion propulsion 1 15 active propulsion.thrusters.LiquidThrusterBindings.liquidMount fun(Int):LiquidThrusterMount
 operation propulsion propulsion 1 16 active propulsion.thrusters.LiquidThrusterBindings.liquidSetThrottle fun(Int,Double):Unit
 operation propulsion propulsion 1 17 active propulsion.thrusters.LiquidThrusterBindings.liquidState fun(Int):LiquidThrusterState
+operation propulsion propulsion 1 18 active propulsion.heat.BurnerBindings.burnerState fun(Int):LiquidBurnerState

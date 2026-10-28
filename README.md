@@ -49,3 +49,12 @@ redstone. Native redstone may therefore power an engine after program control en
 are not serialized into ship/chunk payloads; compatible VM hibernation checkpoints restore them
 through the normal peripheral identity checks. Solid, ion, vector-liquid and multiblock engines are
 outside this API. Existing Creative operation IDs remain unchanged.
+
+## Liquid burner observations (API 3.2)
+
+`propulsion.heat.LiquidBurner.named("pump-burner").state()` reads native tick, fluid ID,
+finite buffer amount/capacity in mB and whether it is burning. Bind a real Propulsion liquid burner
+through the normal peripheral network. The API has no fill, ignition or heat override. Native burner
+and Stirling mechanics own startup, fuel consumption and kinetic output. Unloading, replacement or
+loss of reachability invalidates the exact-device handle. This permits Guest instruments to include
+auxiliary burner buffers in total ship stock without synthesizing fuel.

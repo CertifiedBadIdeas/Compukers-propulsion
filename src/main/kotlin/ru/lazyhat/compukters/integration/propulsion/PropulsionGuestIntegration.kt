@@ -19,6 +19,7 @@
 package ru.lazyhat.compukters.integration.propulsion
 
 import dev.propulsionteam.propulsionsimulated.PropulsionConfig
+import dev.propulsionteam.propulsionsimulated.content.heat.burners.liquid.LiquidBurnerBlockEntity
 import dev.propulsionteam.propulsionsimulated.content.thruster.AbstractThrusterBlockEntity.ControlMode
 import dev.propulsionteam.propulsionsimulated.content.thruster.thruster.ThrusterBlockEntity
 import dev.propulsionteam.propulsionsimulated.content.thruster.thruster.creative_thruster.CreativeThrusterBlockEntity
@@ -30,6 +31,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent
 import propulsion.CreativeThrusterState
 import propulsion.CreativeVectorThrusterMount
 import propulsion.CreativeVectorThrusterState
+import propulsion.LiquidBurnerState
 import propulsion.LiquidThrusterMount
 import propulsion.LiquidThrusterState
 import propulsion.PropulsionAddonContract
@@ -82,8 +84,15 @@ internal object PropulsionGuestIntegration {
                     ?: LiquidThrusterHost.resolve(contact.level, contact.position)?.let {
                         CompuktersPeripheralDevice(it.blockPos, LiquidThrusterHost.DEVICE_KEY)
                     }
+                    ?: if (contact.level.hasChunkAt(contact.position)) {
+                        (contact.level.getBlockEntity(contact.position) as? LiquidBurnerBlockEntity)
+                            ?.takeUnless { it.isRemoved }
+                            ?.let { CompuktersPeripheralDevice(it.blockPos, "liquid_burner") }
+                    } else {
+                        null
+                    }
             },
-            listOf(contract, VectorThrusterHost.contract, LiquidThrusterHost.contract),
+            listOf(contract, VectorThrusterHost.contract, LiquidThrusterHost.contract, LiquidBurnerEndpoint.contract),
         )
         NeoForge.EVENT_BUS.addListener<ServerTickEvent.Post> {
             leases.reap()
@@ -133,6 +142,15 @@ internal object PropulsionGuestIntegration {
 
         private val vectorHost = VectorThrusterHost(computer, vectorLeases)
         private val liquidHost = LiquidThrusterHost(computer, liquidLeases)
+
+        override fun burnerState(handle: Int): AddonCallResult<LiquidBurnerState> {
+            checkThread()
+            return try {
+                addonCompleted(computer.peripheral(LiquidBurnerEndpoint.contract, handle).state())
+            } catch (failure: CompuktersPeripheralAccessException) {
+                addonFailed(failure.kind, failure.message)
+            }
+        }
 
         override fun liquidAcquire(name: String): AddonCallResult<Int> = liquidHost.acquire(name)
 
