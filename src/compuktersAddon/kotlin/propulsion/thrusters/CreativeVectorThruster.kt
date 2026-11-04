@@ -18,6 +18,8 @@
 
 package propulsion.thrusters
 
+import compukter.commands.Command
+import compukter.commands.CommandArgument
 import compukter.peripheral.Peripheral
 import compukter.peripheral.TypedPeripheralProvider
 
@@ -63,24 +65,43 @@ public value class CreativeVectorThruster internal constructor(private val handl
 
     /** Claims exclusive program control; normal Propulsion startup rules still apply. */
     public fun setThrottle(throttle: Double) {
-        if (!(throttle >= 0.0 && throttle <= 1.0)) throw IllegalArgumentException("Throttle must be finite and between 0 and 1")
+        validateThrottle(throttle)
         VectorThrusterBindings.vectorSetThrottle(handle, throttle)
     }
 
     /** Local nozzle controls, not world coordinates or degrees. Fractional targets retain upstream Float precision. */
     public fun setVector(x: Double, y: Double) {
-        if (!(x >= -1.0 && x <= 1.0 && y >= -1.0 && y <= 1.0)) throw IllegalArgumentException("Vector coordinates must be finite and between -1 and 1")
+        validateVector(x, y)
         VectorThrusterBindings.vectorSetVector(handle, x, y)
     }
 
     /** Temporarily overrides creative engine thrust before throttle, bounded by state().maxThrustKn. */
     public fun setThrustKn(thrust: Double) {
-        if (!(thrust >= 0.0 && thrust <= Double.MAX_VALUE)) throw IllegalArgumentException("Thrust must be finite and nonnegative")
+        validateThrust(thrust)
         VectorThrusterBindings.vectorSetThrustKn(handle, thrust)
     }
 
     /** Returns the thrust setting to the engine's saved scroll-wheel configuration. */
     public fun clearThrustOverride() { VectorThrusterBindings.vectorClearThrustOverride(handle) }
+
+    public fun setVectorCommand(x: Double, y: Double): Command<Unit> {
+        validateVector(x, y)
+        return Command.unit("propulsion.thrusters.VectorThrusterBindings.vectorSetVector", listOf(CommandArgument.int(handle), CommandArgument.double(x), CommandArgument.double(y)))
+    }
+
+    public fun setThrustKnCommand(thrust: Double): Command<Unit> {
+        validateThrust(thrust)
+        return Command.unit("propulsion.thrusters.VectorThrusterBindings.vectorSetThrustKn", listOf(CommandArgument.int(handle), CommandArgument.double(thrust)))
+    }
+
+    public fun clearThrustOverrideCommand(): Command<Unit> =
+        Command.unit("propulsion.thrusters.VectorThrusterBindings.vectorClearThrustOverride", listOf(CommandArgument.int(handle)))
+
+    /** Creates a command description without changing the engine. Submit it with batch(). */
+    public fun setThrottleCommand(throttle: Double): Command<Unit> {
+        validateThrottle(throttle)
+        return Command.unit("propulsion.thrusters.VectorThrusterBindings.vectorSetThrottle", listOf(CommandArgument.int(handle), CommandArgument.double(throttle)))
+    }
 
     /** Releases this program's throttle, steering and custom thrust; invalidates the handle. */
     public fun close() { VectorThrusterBindings.vectorClose(handle) }

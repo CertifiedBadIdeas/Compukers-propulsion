@@ -32,6 +32,30 @@ probes additionally require the Compukters Sable addon (not only upstream Sable)
 as in the all-addon development stand. Standalone fixtures use the current runtime's Ctrl+C cancellation and
 check competing ownership at peripheral lookup.
 
+## Command lists (API 3.3, Compukters 0.7.0)
+
+Creative, liquid and creative vector engines expose `setThrottleCommand(0.0..1.0)` alongside
+`setThrottle`. Creative engines also expose `setThrustPercentCommand`; creative vector engines expose
+`setVectorCommand`, `setThrustKnCommand` and `clearThrustOverrideCommand`. These ordinary members appear
+in autocomplete without a special scope and return immutable `Command<Unit>` descriptions. Construction
+validates and snapshots the arguments; it neither sends a request nor claims control. Device availability
+and ownership are checked when the command executes.
+
+```kotlin
+import compukter.commands.batch
+import compukter.concurrent.async
+
+val commands = listOf(left.setThrottleCommand(0.4), right.setThrottleCommand(0.4))
+val pending = async { batch(commands) }
+for (result in pending.await()) result.getOrThrow()
+```
+
+`batch` applies the list in order during one server-thread delivery and returns a result per position.
+A command failure does not prevent the others from running or roll back earlier effects. Reusing the
+list executes it again. The group is bounded to 32 commands/4096 bytes and must fit the full configured
+per-tick host-request allowance (16 commands by default). Insufficient credits in the current tick defer
+the entire group. Sequential setters remain available for immediate individual calls.
+
 ## Standard liquid engines (API 3.1)
 
 `propulsion.thrusters.LiquidThruster` supports independent ordinary single-block liquid thrusters.

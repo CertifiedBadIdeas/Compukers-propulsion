@@ -125,6 +125,17 @@ internal object PropulsionGuestIntegration {
         private val computer: CompuktersComputerContext,
         private val leases: ThrusterControlLeases<CreativeThrusterBlockEntity>,
     ) : PropulsionCapabilityHandler {
+        override val batchCommands: Set<String> =
+            setOf(
+                "setThrottle",
+                "setThrustPercent",
+                "liquidSetThrottle",
+                "vectorSetThrottle",
+                "vectorSetVector",
+                "vectorSetThrustKn",
+                "vectorClearThrustOverride",
+            )
+
         internal class BoundThruster(
             val entity: CreativeThrusterBlockEntity,
             private val reachable: () -> Boolean,

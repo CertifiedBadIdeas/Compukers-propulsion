@@ -18,6 +18,8 @@
 
 package propulsion.thrusters
 
+import compukter.commands.Command
+import compukter.commands.CommandArgument
 import compukter.peripheral.Peripheral
 import compukter.peripheral.TypedPeripheralProvider
 
@@ -46,14 +48,25 @@ public value class CreativeThruster internal constructor(private val handle: Int
 
     /** Claims exclusive program control. Propulsion applies its ordinary startup and obstruction rules. */
     public fun setThrottle(throttle: Double) {
-        if (!(throttle >= 0.0 && throttle <= 1.0)) throw IllegalArgumentException("Throttle must be finite and between 0 and 1")
+        validateThrottle(throttle)
         ThrusterBindings.setThrottle(handle, throttle)
     }
 
     /** Changes the saved engine setting, independently of the current throttle. */
     public fun setThrustPercent(percent: Int) {
-        if (percent < 1 || percent > 100) throw IllegalArgumentException("Thrust percentage must be between 1 and 100")
+        validateThrustPercent(percent)
         ThrusterBindings.setThrustPercent(handle, percent)
+    }
+
+    public fun setThrustPercentCommand(percent: Int): Command<Unit> {
+        validateThrustPercent(percent)
+        return Command.unit("propulsion.thrusters.ThrusterBindings.setThrustPercent", listOf(CommandArgument.int(handle), CommandArgument.int(percent)))
+    }
+
+    /** Creates a command description without changing the engine. Submit it with batch(). */
+    public fun setThrottleCommand(throttle: Double): Command<Unit> {
+        validateThrottle(throttle)
+        return Command.unit("propulsion.thrusters.ThrusterBindings.setThrottle", listOf(CommandArgument.int(handle), CommandArgument.double(throttle)))
     }
 
     /** Invalidates this handle and releases digital control back to redstone. */

@@ -18,6 +18,8 @@
 
 package propulsion.thrusters
 
+import compukter.commands.Command
+import compukter.commands.CommandArgument
 import compukter.peripheral.Peripheral
 import compukter.peripheral.TypedPeripheralProvider
 
@@ -61,8 +63,14 @@ public value class LiquidThruster internal constructor(private val handle: Int) 
 
     /** Exclusive program lease; Propulsion retains its native startup/fuel/update cadence. */
     public fun setThrottle(throttle: Double) {
-        if (!(throttle >= 0.0 && throttle <= 1.0)) throw IllegalArgumentException("Throttle must be finite and between 0 and 1")
+        validateThrottle(throttle)
         LiquidThrusterBindings.liquidSetThrottle(handle, throttle)
+    }
+
+    /** Creates a command description without changing the engine. Submit it with batch(). */
+    public fun setThrottleCommand(throttle: Double): Command<Unit> {
+        validateThrottle(throttle)
+        return Command.unit("propulsion.thrusters.LiquidThrusterBindings.liquidSetThrottle", listOf(CommandArgument.int(handle), CommandArgument.double(throttle)))
     }
 
     public fun close() { LiquidThrusterBindings.liquidClose(handle) }

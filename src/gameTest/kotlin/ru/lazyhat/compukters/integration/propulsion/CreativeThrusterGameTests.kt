@@ -305,6 +305,7 @@ object PropulsionGameTestRegistration {
         event.register(LiquidThrusterGameTests::class.java)
         event.register(LiquidBurnerGameTests::class.java)
         event.register(CreativeVectorThrusterGameTests::class.java)
+        event.register(CommandBatchGameTests::class.java)
         // These probes compile both addon APIs; the standalone addon run has upstream Sable only.
         if (ModList.get().isLoaded("compukters_sable")) {
             event.register(CreativeVectorThrusterLatencyGameTests::class.java)
