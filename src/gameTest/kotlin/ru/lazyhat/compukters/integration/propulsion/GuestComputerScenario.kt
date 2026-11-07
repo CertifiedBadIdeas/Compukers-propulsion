@@ -31,6 +31,8 @@ import ru.lazyhat.compukters.lang.runtime.vm.TerminalModifier
 import ru.lazyhat.compukters.lang.runtime.vm.TerminalState
 import ru.lazyhat.compukters.minecraft.computer.ComputerBlockEntity
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.LockSupport
 
 /** Uses the public computer input boundary, actual Guest editor, compiler worker and addon-enabled VM. */
 internal class GuestComputerScenario(
@@ -71,7 +73,7 @@ internal class GuestComputerScenario(
         }
         sequence.thenExecute { operation = command("kotlinc main.kt -o scenario") }
         awaitOperation(sequence)
-        awaitText(sequence, "compiled: /home/scenario")
+        awaitText(sequence, "compiled: /home/scenario", compiling = true)
         sequence.thenExecute { operation = command("scenario") }
         awaitOperation(sequence)
     }
@@ -160,9 +162,21 @@ internal class GuestComputerScenario(
         sequence: GameTestSequence,
         expected: String,
         linePrefix: Boolean = false,
+        compiling: Boolean = false,
     ) {
-        sequence.thenExecute { LogUtils.getLogger().info("Propulsion GameTest awaiting terminal checkpoint: {}", expected.trim()) }
+        var deadlineNanos = 0L
+        sequence.thenExecute {
+            LogUtils.getLogger().info("Propulsion GameTest awaiting terminal checkpoint: {}", expected.trim())
+            if (compiling) deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(60)
+        }
         sequence.thenWaitUntil {
+            if (compiling) {
+                helper.assertTrue(System.nanoTime() <= deadlineNanos, "Guest compilation exceeded 60 seconds; $lastObservation")
+                // GameTest ticks are unpaced; allow the external compiler wall time without exhausting the tick budget.
+                if (computer.runtimeState == ProgramComputerState.WaitingForCompiler) {
+                    LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1))
+                }
+            }
             if (snapshot == null) snapshot = computer.terminalFullStateAsync()
             helper.assertTrue(snapshot!!.isDone, "terminal snapshot is pending; expected $expected; $lastObservation")
             val state = snapshot!!.join()
