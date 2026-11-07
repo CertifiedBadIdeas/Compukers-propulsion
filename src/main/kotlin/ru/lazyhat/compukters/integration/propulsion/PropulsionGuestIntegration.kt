@@ -125,17 +125,6 @@ internal object PropulsionGuestIntegration {
         private val computer: CompuktersComputerContext,
         private val leases: ThrusterControlLeases<CreativeThrusterBlockEntity>,
     ) : PropulsionCapabilityHandler {
-        override val batchCommands: Set<String> =
-            setOf(
-                "setThrottle",
-                "setThrustPercent",
-                "liquidSetThrottle",
-                "vectorSetThrottle",
-                "vectorSetVector",
-                "vectorSetThrustKn",
-                "vectorClearThrustOverride",
-            )
-
         internal class BoundThruster(
             val entity: CreativeThrusterBlockEntity,
             private val reachable: () -> Boolean,
@@ -163,7 +152,7 @@ internal object PropulsionGuestIntegration {
             }
         }
 
-        override fun liquidAcquire(name: String): AddonCallResult<Int> = liquidHost.acquire(name)
+        internal fun liquidAcquire(name: String): AddonCallResult<Int> = liquidHost.acquire(name)
 
         override fun liquidMount(handle: Int): AddonCallResult<LiquidThrusterMount> = liquidHost.mount(handle)
 
@@ -176,7 +165,7 @@ internal object PropulsionGuestIntegration {
 
         override fun liquidClose(handle: Int): AddonCallResult<Unit> = liquidHost.close(handle)
 
-        override fun vectorAcquire(name: String): AddonCallResult<Int> = vectorHost.acquire(name)
+        internal fun vectorAcquire(name: String): AddonCallResult<Int> = vectorHost.acquire(name)
 
         override fun vectorMount(handle: Int): AddonCallResult<CreativeVectorThrusterMount> = vectorHost.mount(handle)
 
@@ -204,7 +193,7 @@ internal object PropulsionGuestIntegration {
 
         private val handles = mutableMapOf<Int, BoundThruster>()
 
-        override fun acquire(name: String): AddonCallResult<Int> {
+        internal fun acquire(name: String): AddonCallResult<Int> {
             checkThread()
             return try {
                 val handle = computer.peripheralNamed(contract, name)
