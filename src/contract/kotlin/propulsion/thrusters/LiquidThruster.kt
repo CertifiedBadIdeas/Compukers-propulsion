@@ -20,15 +20,11 @@ package propulsion.thrusters
 
 import ru.lazyhat.compukters.api.contracts.DoubleRange
 import ru.lazyhat.compukters.api.contracts.GuestCall
-import ru.lazyhat.compukters.api.contracts.GuestCommand
 import ru.lazyhat.compukters.api.contracts.GuestDevice
-import ru.lazyhat.compukters.api.contracts.GuestRead
-import ru.lazyhat.compukters.api.contracts.GuestRecord
 
 /** Native server sample for an independent standard liquid engine. Thrust is in kN, fuel in mB.
  * Nominal thrust excludes startup/throttle/obstruction; current thrust remains native authority.
  */
-@GuestRecord
 value class LiquidThrusterState(
     val gameTick: Long,
     val throttle: Double,
@@ -45,7 +41,6 @@ value class LiquidThrusterState(
 )
 
 /** Neutral thrust axis and block offset from the computer, in construction coordinates. */
-@GuestRecord
 value class LiquidThrusterMount(
     val constructionId: String,
     val offsetX: Int,
@@ -59,14 +54,14 @@ value class LiquidThrusterMount(
 /** Standard single liquid thruster; no synthetic fuel, thrust override or host flight controller. */
 @GuestDevice("propulsion:liquid_thruster", bindings = "LiquidThrusterBindings")
 interface LiquidThruster {
-    @GuestRead(binding = "liquidMount")
+    @GuestCall(binding = "liquidMount")
     fun mount(): LiquidThrusterMount
 
-    @GuestRead(binding = "liquidState")
+    @GuestCall(binding = "liquidState")
     fun state(): LiquidThrusterState
 
     /** Exclusive program lease; Propulsion retains its native startup/fuel/update cadence. */
-    @GuestCommand(binding = "liquidSetThrottle")
+    @GuestCall(binding = "liquidSetThrottle")
     fun setThrottle(
         @DoubleRange(min = 0.0, max = 1.0) throttle: Double,
     ): Unit

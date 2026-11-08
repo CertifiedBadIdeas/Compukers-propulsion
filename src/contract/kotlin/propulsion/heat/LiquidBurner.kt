@@ -2,11 +2,9 @@
 package propulsion.heat
 
 import ru.lazyhat.compukters.api.contracts.GuestDevice
-import ru.lazyhat.compukters.api.contracts.GuestRead
-import ru.lazyhat.compukters.api.contracts.GuestRecord
+import ru.lazyhat.compukters.api.contracts.GuestCall
 
 /** Native liquid-burner buffer observation in millibuckets. */
-@GuestRecord
 value class LiquidBurnerState(
     val gameTick: Long,
     val fuel: String,
@@ -17,6 +15,6 @@ value class LiquidBurnerState(
 
 @GuestDevice("propulsion:liquid_burner", bindings = "BurnerBindings")
 interface LiquidBurner {
-    @GuestRead(binding = "burnerState")
+    @GuestCall(binding = "burnerState")
     fun state(): LiquidBurnerState
 }

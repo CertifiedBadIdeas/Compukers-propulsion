@@ -20,14 +20,10 @@ package propulsion.thrusters
 
 import ru.lazyhat.compukters.api.contracts.DoubleRange
 import ru.lazyhat.compukters.api.contracts.GuestCall
-import ru.lazyhat.compukters.api.contracts.GuestCommand
 import ru.lazyhat.compukters.api.contracts.GuestDevice
-import ru.lazyhat.compukters.api.contracts.GuestRead
-import ru.lazyhat.compukters.api.contracts.GuestRecord
 import ru.lazyhat.compukters.api.contracts.IntRange
 
 /** Immutable state observed on the server; thrust is expressed in kilonewtons. */
-@GuestRecord
 value class CreativeThrusterState(
     val gameTick: Long,
     val throttle: Double,
@@ -45,17 +41,17 @@ value class CreativeThrusterState(
 
 @GuestDevice("propulsion:creative_thruster", bindings = "ThrusterBindings")
 interface CreativeThruster {
-    @GuestRead(binding = "state")
+    @GuestCall(binding = "state")
     fun state(): CreativeThrusterState
 
     /** Claims exclusive program control. Propulsion applies its ordinary startup and obstruction rules. */
-    @GuestCommand(binding = "setThrottle")
+    @GuestCall(binding = "setThrottle")
     fun setThrottle(
         @DoubleRange(min = 0.0, max = 1.0) throttle: Double,
     ): Unit
 
     /** Changes the saved engine setting, independently of the current throttle. */
-    @GuestCommand(binding = "setThrustPercent")
+    @GuestCall(binding = "setThrustPercent")
     fun setThrustPercent(
         @IntRange(min = 1, max = 100) percent: Int,
     ): Unit
