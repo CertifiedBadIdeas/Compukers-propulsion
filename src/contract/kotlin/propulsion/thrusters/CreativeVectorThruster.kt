@@ -28,7 +28,7 @@ import ru.lazyhat.compukters.api.contracts.GuestRecord
 
 /** Server observation. Thrust is in kN; vector coordinates are local normalized nozzle controls. */
 @GuestRecord
-data class CreativeVectorThrusterState(
+value class CreativeVectorThrusterState(
     val gameTick: Long,
     val throttle: Double,
     val effectiveThrottle: Double,
@@ -48,7 +48,7 @@ data class CreativeVectorThrusterState(
  * Empty constructionId denotes the ordinary world. Neutral force direction ignores live nozzle steering.
  */
 @GuestRecord
-data class CreativeVectorThrusterMount(
+value class CreativeVectorThrusterMount(
     val constructionId: String,
     val offsetX: Int,
     val offsetY: Int,

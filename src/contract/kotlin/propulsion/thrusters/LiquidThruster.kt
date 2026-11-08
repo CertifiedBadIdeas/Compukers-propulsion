@@ -29,7 +29,7 @@ import ru.lazyhat.compukters.api.contracts.GuestRecord
  * Nominal thrust excludes startup/throttle/obstruction; current thrust remains native authority.
  */
 @GuestRecord
-data class LiquidThrusterState(
+value class LiquidThrusterState(
     val gameTick: Long,
     val throttle: Double,
     val effectiveThrottle: Double,
@@ -46,7 +46,7 @@ data class LiquidThrusterState(
 
 /** Neutral thrust axis and block offset from the computer, in construction coordinates. */
 @GuestRecord
-data class LiquidThrusterMount(
+value class LiquidThrusterMount(
     val constructionId: String,
     val offsetX: Int,
     val offsetY: Int,

@@ -28,7 +28,7 @@ import ru.lazyhat.compukters.api.contracts.IntRange
 
 /** Immutable state observed on the server; thrust is expressed in kilonewtons. */
 @GuestRecord
-data class CreativeThrusterState(
+value class CreativeThrusterState(
     val gameTick: Long,
     val throttle: Double,
     val effectiveThrottle: Double,

@@ -7,7 +7,7 @@ import ru.lazyhat.compukters.api.contracts.GuestRecord
 
 /** Native liquid-burner buffer observation in millibuckets. */
 @GuestRecord
-data class LiquidBurnerState(
+value class LiquidBurnerState(
     val gameTick: Long,
     val fuel: String,
     val amountMb: Int,
